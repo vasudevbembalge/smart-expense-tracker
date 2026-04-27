@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Expense Tracker - Login & Sign Up</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h1>💰 Smart Expense Tracker</h1>
+                <p>Manage Your Finances Smartly</p>
+            </div>
+
+            <div class="auth-tabs">
+                <button class="tab-btn active" id="login-tab" onclick="switchTab('login')">Login</button>
+                <button class="tab-btn" id="signup-tab" onclick="switchTab('signup')">Sign Up</button>
+            </div>
+
+            <!-- Login Form -->
+            <div id="login-form" class="auth-form active">
+                <form onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label for="login-email">Email Address</label>
+                        <input 
+                            type="email" 
+                            id="login-email" 
+                            name="email" 
+                            placeholder="Enter your email" 
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <div class="password-input">
+                            <input 
+                                type="password" 
+                                id="login-password" 
+                                name="password" 
+                                placeholder="Enter your password" 
+                                required
+                            >
+                            <span class="toggle-password" onclick="togglePasswordVisibility('login-password')">👁️</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="checkbox">
+                            <input type="checkbox" name="remember">
+                            Remember me
+                        </label>
+                    </div>
+
+                    <button type="submit" class="auth-btn">Login</button>
+
+                    <div id="login-error" class="error-message"></div>
+                </form>
+
+                <div class="form-footer">
+                    <a href="#" onclick="resetPassword(event)" class="forgot-password">Forgot Password?</a>
+                </div>
+            </div>
+
+            <!-- Sign Up Form -->
+            <div id="signup-form" class="auth-form">
+                <form onsubmit="handleSignUp(event)">
+                    <div class="form-group">
+                        <label for="signup-name">Full Name</label>
+                        <input 
+                            type="text" 
+                            id="signup-name" 
+                            name="name" 
+                            placeholder="Enter your full name" 
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="signup-email">Email Address</label>
+                        <input 
+                            type="email" 
+                            id="signup-email" 
+                            name="email" 
+                            placeholder="Enter your email" 
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="signup-password">Password</label>
+                        <div class="password-input">
+                            <input 
+                                type="password" 
+                                id="signup-password" 
+                                name="password" 
+                                placeholder="Create a strong password" 
+                                required
+                            >
+                            <span class="toggle-password" onclick="togglePasswordVisibility('signup-password')">👁️</span>
+                        </div>
+                        <small class="password-hint">Must be at least 6 characters</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="signup-confirm">Confirm Password</label>
+                        <div class="password-input">
+                            <input 
+                                type="password" 
+                                id="signup-confirm" 
+                                name="confirm_password" 
+                                placeholder="Confirm your password" 
+                                required
+                            >
+                            <span class="toggle-password" onclick="togglePasswordVisibility('signup-confirm')">👁️</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="checkbox">
+                            <input type="checkbox" name="terms" required>
+                            I agree to the Terms & Conditions
+                        </label>
+                    </div>
+
+                    <button type="submit" class="auth-btn">Create Account</button>
+
+                    <div id="signup-error" class="error-message"></div>
+                </form>
+            </div>
+
+            <!-- Success Message -->
+            <div id="success-message" class="success-message" style="display: none;">
+                <p id="success-text"></p>
+            </div>
+        </div>
+
+        <div class="auth-footer">
+            <p>&copy; 2024 Smart Expense Tracker. All rights reserved.</p>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tab) {
+            // Hide all forms
+            document.getElementById('login-form').classList.remove('active');
+            document.getElementById('signup-form').classList.remove('active');
+            
+            // Remove active class from tabs
+            document.getElementById('login-tab').classList.remove('active');
+            document.getElementById('signup-tab').classList.remove('active');
+            
+            // Show selected form
+            if (tab === 'login') {
+                document.getElementById('login-form').classList.add('active');
+                document.getElementById('login-tab').classList.add('active');
+            } else {
+                document.getElementById('signup-form').classList.add('active');
+                document.getElementById('signup-tab').classList.add('active');
+            }
+            
+            // Clear error messages
+            document.getElementById('login-error').textContent = '';
+            document.getElementById('signup-error').textContent = '';
+        }
+
+        function togglePasswordVisibility(inputId) {
+            const input = document.getElementById(inputId);
+            const toggle = event.target;
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                toggle.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                toggle.textContent = '👁️';
+            }
+        }
+
+        function handleLogin(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            const errorDiv = document.getElementById('login-error');
+            
+            errorDiv.textContent = '';
+            
+            // Validate inputs
+            if (!email || !password) {
+                errorDiv.textContent = 'Please fill in all fields';
+                return;
+            }
+            
+            // Send login request
+            fetch('/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: email,
+                    password: password
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Redirect to dashboard
+                    window.location.href = '/';
+                } else {
+                    errorDiv.textContent = data.message || 'Login failed. Please try again.';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                errorDiv.textContent = 'An error occurred. Please try again.';
+            });
+        }
+
+        function handleSignUp(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('signup-name').value;
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            const confirmPassword = document.getElementById('signup-confirm').value;
+            const errorDiv = document.getElementById('signup-error');
+            
+            errorDiv.textContent = '';
+            
+            // Validate inputs
+            if (!name || !email || !password || !confirmPassword) {
+                errorDiv.textContent = 'Please fill in all fields';
+                return;
+            }
+            
+            if (password.length < 6) {
+                errorDiv.textContent = 'Password must be at least 6 characters';
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                errorDiv.textContent = 'Passwords do not match';
+                return;
+            }
+            
+            // Send signup request
+            fetch('/signup', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    name: name,
+                    email: email,
+                    password: password
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    document.getElementById('success-message').style.display = 'block';
+                    document.getElementById('success-text').textContent = 'Account created successfully! Redirecting...';
+                    
+                    // Redirect after 2 seconds
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 2000);
+                } else {
+                    errorDiv.textContent = data.message || 'Sign up failed. Please try again.';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                errorDiv.textContent = 'An error occurred. Please try again.';
+            });
+        }
+
+        function resetPassword(event) {
+            event.preventDefault();
+            alert('Password reset functionality will be implemented soon!');
+        }
+    </script>
+</body>
+</html>
