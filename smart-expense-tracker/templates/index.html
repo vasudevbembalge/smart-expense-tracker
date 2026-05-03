@@ -3,34 +3,260 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Expense Tracker</title>
+    <title>Smart Expense Tracker - Interactive Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>💰 Smart Expense Tracker</h1>
-            <p class="subtitle">DevOps Mini Project</p>
+            <div class="header-left">
+                <h1>💰 Smart Expense Tracker</h1>
+                <p class="subtitle">Interactive Dashboard</p>
+            </div>
+            <div class="header-right">
+                <div class="user-info">
+                    <span id="user-name">User</span>
+                    <button class="logout-btn" onclick="logout()">Logout</button>
+                </div>
+            </div>
         </header>
-        <div class="balance-section">
-            <div class="balance-card income"><h3>Total Income</h3><p class="amount" id="total-income">₹0.00</p></div>
-            <div class="balance-card expense"><h3>Total Expense</h3><p class="amount" id="total-expense">₹0.00</p></div>
-            <div class="balance-card remaining"><h3>Remaining Balance</h3><p class="amount" id="remaining">₹0.00</p></div>
+
+        <!-- Dashboard Summary Cards -->
+        <div class="dashboard-section">
+            <div class="summary-cards">
+                <div class="summary-card clickable" onclick="showDetailedView('total-spent')">
+                    <div class="card-icon">💸</div>
+                    <h3>Total Spent</h3>
+                    <p class="amount" id="total-spent">₹0.00</p>
+                    <p class="card-subtitle">This Month</p>
+                </div>
+                <div class="summary-card clickable" onclick="showDetailedView('budget-remaining')">
+                    <div class="card-icon">🎯</div>
+                    <h3>Budget Remaining</h3>
+                    <p class="amount" id="budget-remaining">₹0.00</p>
+                    <p class="card-subtitle" id="budget-percent"></p>
+                </div>
+                <div class="summary-card clickable" onclick="showDetailedView('savings')">
+                    <div class="card-icon">🏦</div>
+                    <h3>Savings</h3>
+                    <p class="amount" id="savings">₹0.00</p>
+                    <p class="card-subtitle" id="savings-rate-text">0% Savings Rate</p>
+                </div>
+            </div>
         </div>
+
+        <!-- Insights Section -->
+        <div class="insights-section">
+            <h3>💡 Smart Insights</h3>
+            <div id="insights-list" class="insights-list"></div>
+        </div>
+
+        <!-- Weekly vs Monthly Comparison -->
+        <div class="chart-container">
+            <h3>📊 Weekly vs Monthly Spending</h3>
+            <div class="chart-wrapper">
+                <canvas id="comparisonChart"></canvas>
+            </div>
+            <div class="chart-stats">
+                <div class="stat-item">
+                    <span class="stat-label">This Week:</span>
+                    <span class="stat-value" id="this-week">₹0.00</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Last Week:</span>
+                    <span class="stat-value" id="last-week">₹0.00</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">This Month:</span>
+                    <span class="stat-value" id="this-month">₹0.00</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Change:</span>
+                    <span class="stat-value" id="week-change">0%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Spending Category -->
+        <div class="chart-row">
+            <div class="chart-container half">
+                <h3>🏆 Top Spending Category</h3>
+                <div class="chart-wrapper">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+                <div class="category-details">
+                    <h4 id="top-category-name">-</h4>
+                    <p id="top-category-amount">₹0.00 (0%)</p>
+                </div>
+            </div>
+
+            <!-- Savings Rate Tracker -->
+            <div class="chart-container half">
+                <h3>💰 Savings Rate Tracker</h3>
+                <div class="savings-tracker">
+                    <div class="circular-progress">
+                        <svg viewBox="0 0 100 100" class="progress-svg">
+                            <circle cx="50" cy="50" r="45" class="progress-background"></circle>
+                            <circle cx="50" cy="50" r="45" class="progress-circle" id="savingsProgressCircle"></circle>
+                        </svg>
+                        <div class="progress-text">
+                            <span class="progress-percentage" id="savings-percent">0%</span>
+                            <span class="progress-label">Saved</span>
+                        </div>
+                    </div>
+                    <div class="savings-status" id="savings-status">
+                        <p id="savings-status-text">Loading...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Transaction Section -->
         <div class="form-section">
             <h2>Add Transaction</h2>
             <form id="transaction-form">
-                <div class="form-group"><label>Type:</label><select id="type" required><option value="income">Income</option><option value="expense">Expense</option></select></div>
-                <div class="form-group"><label>Description:</label><input type="text" id="description" placeholder="e.g., Salary, Food, Transport" required></div>
-                <div class="form-group"><label>Amount (₹):</label><input type="number" id="amount" placeholder="0.00" step="0.01" min="0" required></div>
-                <button type="submit" class="btn-submit">Add Transaction</button>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Type:</label>
+                        <select id="type" required onchange="updateCategoryOptions()">
+                            <option value="income">Income</option>
+                            <option value="expense">Expense</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Description:</label>
+                        <input type="text" id="description" placeholder="e.g., Salary, Food, Transport" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Category:</label>
+                        <select id="category" required>
+                            <option value="Salary">Salary</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Payment Mode:</label>
+                        <select id="payment_mode" required>
+                            <option value="Cash">Cash</option>
+                            <option value="Card">Card</option>
+                            <option value="UPI">UPI</option>
+                            <option value="Bank Transfer">Bank Transfer</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Amount (₹):</label>
+                        <input type="number" id="amount" placeholder="0.00" step="0.01" min="0" required>
+                    </div>
+                    <button type="submit" class="btn-submit">Add Transaction</button>
+                </div>
             </form>
         </div>
+
+        <!-- Filters Section -->
+        <div class="filters-section">
+            <h3>🔍 Filter Expenses</h3>
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label>Category:</label>
+                    <select id="filter-category">
+                        <option value="">All Categories</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Start Date:</label>
+                    <input type="date" id="filter-start-date">
+                </div>
+                <div class="filter-group">
+                    <label>End Date:</label>
+                    <input type="date" id="filter-end-date">
+                </div>
+                <button class="btn-filter" onclick="applyFilters()">Apply Filters</button>
+                <button class="btn-filter btn-reset" onclick="resetFilters()">Reset</button>
+            </div>
+        </div>
+
+        <!-- Recent Transactions Section -->
         <div class="transactions-section">
-            <h2>Recent Transactions</h2>
+            <h2>📝 Recent Transactions</h2>
             <div id="transactions-list"><p class="no-data">No transactions yet. Add one above!</p></div>
         </div>
     </div>
+
+    <!-- Edit Transaction Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeEditModal()">&times;</span>
+            <h2>Edit Transaction</h2>
+            <form id="edit-form">
+                <input type="hidden" id="edit-id">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Description:</label>
+                        <input type="text" id="edit-description" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Category:</label>
+                        <select id="edit-category" required></select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Amount (₹):</label>
+                        <input type="number" id="edit-amount" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Payment Mode:</label>
+                        <select id="edit-payment_mode" required>
+                            <option value="Cash">Cash</option>
+                            <option value="Card">Card</option>
+                            <option value="UPI">UPI</option>
+                            <option value="Bank Transfer">Bank Transfer</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-buttons">
+                    <button type="submit" class="btn-submit">Save Changes</button>
+                    <button type="button" class="btn-cancel" onclick="closeEditModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Detailed View Modal -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content large">
+            <span class="close" onclick="closeDetailedView()">&times;</span>
+            <h2 id="detailTitle">Detailed View</h2>
+            <div id="detailContent"></div>
+        </div>
+    </div>
+
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    
+    <script>
+        // Display user name on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            // Get user name from session (passed via template or fetched from server)
+            fetch('/get_user_info')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.name) {
+                        document.getElementById('user-name').textContent = 'Hello, ' + data.name + ' 👋';
+                    }
+                })
+                .catch(error => console.log('User info not available'));
+        });
+
+        // Logout function
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                window.location.href = '/logout';
+            }
+        }
+    </script>
 </body>
 </html>
